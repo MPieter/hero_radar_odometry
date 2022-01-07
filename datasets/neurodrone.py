@@ -7,7 +7,7 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from datasets.custom_sampler import RandomWindowBatchSampler, SequentialWindowBatchSampler
-from datasets.radar import load_radar, radar_polar_to_cartesian
+from datasets.radar import load_neuordrone_radar, neurodrone_radar_polar_to_cartesian
 from datasets.interpolate_poses import interpolate_ins_poses
 from utils.utils import get_inverse_tf
 
@@ -67,7 +67,7 @@ def mean_intensity_mask(polar_data, multiplier=3.0):
         mask[i, :] = polar_data[i, :] > multiplier * m
     return mask
 
-class OxfordDataset(Dataset):
+class NeurodroneDataset(Dataset):
     """Oxford Radar Robotcar Dataset."""
     def __init__(self, config, split='train'):
         self.config = config
@@ -188,11 +188,11 @@ class OxfordDataset(Dataset):
             idx = idx.tolist()
         seq = self.get_seq_from_idx(idx)
         frame = self.data_dir + seq + '/radar/' + self.frames[idx]
-        timestamps, azimuths, _, polar = load_radar(frame)
-        data = radar_polar_to_cartesian(azimuths, polar, self.config['radar_resolution'],
+        timestamps, azimuths, _, polar = load_neuordrone_radar(frame)
+        data = neurodrone_radar_polar_to_cartesian(azimuths, polar, self.config['radar_resolution'],
                                         self.config['cart_resolution'], self.config['cart_pixel_width'])  # 1 x H x W
         polar_mask = mean_intensity_mask(polar)
-        mask = radar_polar_to_cartesian(azimuths, polar_mask, self.config['radar_resolution'],
+        mask = neurodrone_radar_polar_to_cartesian(azimuths, polar_mask, self.config['radar_resolution'],
                                         self.config['cart_resolution'],
                                         self.config['cart_pixel_width']).astype(np.float32)
         # Get ground truth transform between this frame and the next
@@ -209,7 +209,7 @@ class OxfordDataset(Dataset):
         return {'data': data, 'T_21': T_21, 't_ref': t_ref, 'mask': mask, 'polar': polar, 'azimuths': azimuths,
                 'timestamps': timestamps}
 
-def get_dataloaders(config):
+def get_dataloaders_neurodrone(config):
     """Returns the dataloaders for training models in pytorch.
     Args:
         config (json): parsed configuration file
@@ -220,9 +220,9 @@ def get_dataloaders(config):
     """
     vconfig = dict(config)
     vconfig['batch_size'] = 1
-    train_dataset = OxfordDataset(config, 'train')
-    valid_dataset = OxfordDataset(vconfig, 'validation')
-    test_dataset = OxfordDataset(vconfig, 'test')
+    train_dataset = NeurodroneDataset(config, 'train')
+    valid_dataset = NeurodroneDataset(vconfig, 'validation')
+    test_dataset = NeurodroneDataset(vconfig, 'test')
     train_sampler = RandomWindowBatchSampler(config['batch_size'], config['window_size'], train_dataset.seq_lens)
     valid_sampler = SequentialWindowBatchSampler(1, config['window_size'], valid_dataset.seq_lens)
     test_sampler = SequentialWindowBatchSampler(1, config['window_size'], test_dataset.seq_lens)

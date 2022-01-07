@@ -6,8 +6,9 @@ import numpy as np
 
 from datasets.oxford import get_dataloaders
 from datasets.boreas import get_dataloaders_boreas
+from datasets.neurodrone import get_dataloaders_neurodrone
 from networks.under_the_radar import UnderTheRadar
-from networks.hero import HERO
+# from networks.hero import HERO
 from utils.utils import get_lr
 from utils.losses import supervised_loss, unsupervised_loss
 from utils.monitor import SVDMonitor, SteamMonitor
@@ -35,11 +36,13 @@ if __name__ == '__main__':
         train_loader, valid_loader, _ = get_dataloaders(config)
     elif config['dataset'] == 'boreas':
         train_loader, valid_loader, _ = get_dataloaders_boreas(config)
+    elif config['dataset'] == 'neurodrone':
+        train_loader, valid_loader, _ = get_dataloaders_neurodrone(config)
 
     if config['model'] == 'UnderTheRadar':
         model = UnderTheRadar(config).to(config['gpuid'])
-    elif config['model'] == 'HERO':
-        model = HERO(config).to(config['gpuid'])
+    # elif config['model'] == 'HERO':
+    #     model = HERO(config).to(config['gpuid'])
 
     ckpt_path = None
     if os.path.isfile(config['log_dir'] + 'latest.pt'):
@@ -52,8 +55,8 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2.5e4 / config['val_rate'], factor=0.5)
     if config['model'] == 'UnderTheRadar':
         monitor = SVDMonitor(model, valid_loader, config)
-    elif config['model'] == 'HERO':
-        monitor = SteamMonitor(model, valid_loader, config)
+    # elif config['model'] == 'HERO':
+    #     monitor = SteamMonitor(model, valid_loader, config)
     start_epoch = 0
 
     if ckpt_path is not None:
@@ -84,6 +87,8 @@ if __name__ == '__main__':
                 elif config['dataset'] == 'oxford' and config['model'] == 'HERO':
                     batch = augmentBatch3(batch, config)
                 elif config['dataset'] == 'oxford' and config['model'] == 'UnderTheRadar':
+                    batch = augmentBatch(batch, config)
+                elif config['dataset'] == 'neurodrone' and config['model'] == 'UnderTheRadar':
                     batch = augmentBatch(batch, config)
             optimizer.zero_grad()
             try:
