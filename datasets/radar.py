@@ -143,7 +143,10 @@ def radar_polar_to_cartesian(azimuths, fft_data, radar_resolution, cart_resoluti
         sample_v = sample_v + 1
 
     polar_to_cart_warp = np.stack((sample_u, sample_v), -1)
-    return np.expand_dims(cv2.remap(fft_data, polar_to_cart_warp, None, cv2.INTER_LINEAR), axis=0)
+    cart_img = np.expand_dims(cv2.remap(fft_data, polar_to_cart_warp, None, cv2.INTER_LINEAR), axis=0)
+    # norm = cv2.normalize(cart_img.reshape((cart_img.shape[1], cart_img.shape[1])), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    # cv2.imwrite('radar_test.jpg', norm)
+    return cart_img
 
 def neurodrone_radar_polar_to_cartesian(azimuths: np.ndarray, fft_data: np.ndarray, radar_resolution: float,
                              cart_resolution: float, cart_pixel_width: int, interpolate_crossover=True) -> np.ndarray:
@@ -246,4 +249,6 @@ def neurodrone_radar_polar_to_cartesian(azimuths: np.ndarray, fft_data: np.ndarr
     polar_to_cart_warp = np.stack((sample_u, sample_v), -1).astype(np.float32)
     fft_data = np.reshape(fft_data.astype(np.float32), (fft_data.shape[0], fft_data.shape[1], 1))
     cart_img = np.expand_dims(cv2.remap(fft_data, polar_to_cart_warp, None, cv2.INTER_LINEAR), axis=0)
+    # norm = cv2.normalize(cart_img.reshape((cart_img.shape[1], cart_img.shape[1])), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    # cv2.imwrite('radar_test.jpg', norm)
     return cart_img

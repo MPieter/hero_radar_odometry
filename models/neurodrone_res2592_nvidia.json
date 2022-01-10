@@ -6,7 +6,7 @@
     "gpuid": "cuda:0",
     "radar_resolution": 0.073125,
     "cart_resolution": 0.073125,
-    "cart_pixel_width": 640,
+    "cart_pixel_width": 320,
     "train_split": [
         0,
         1,
@@ -23,7 +23,7 @@
     "networks": {
         "unet": {
             "bilinear": true,
-            "first_feature_dimension": 8,
+            "first_feature_dimension": 4,
             "score_sigmoid": true
         },
         "keypoint_block": {

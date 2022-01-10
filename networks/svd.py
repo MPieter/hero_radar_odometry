@@ -56,7 +56,9 @@ class SVD(torch.nn.Module):
         W = torch.bmm(tgt_centered * weights, src_centered.transpose(2, 1)) / w  # B x 3 x 3
 
         try:
-            U, _, V = torch.svd(W)
+            # U, _, V = torch.svd(W)
+            U, _, Vh = torch.linalg.svd(W)
+            V = Vh.transpose(-2, -1).conj()
         except RuntimeError:     # torch.svd sometimes has convergence issues, this has yet to be patched.
             print(W)
             print('Adding turbulence to patch convergence issue')
