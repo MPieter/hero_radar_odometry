@@ -105,7 +105,7 @@ class SVDMonitor(MonitorBase):
             T_pred.append(get_transform2(R_pred_, t_pred_))
 
         results = computeMedianError(T_gt, T_pred)
-        t_err, r_err = computeKittiMetrics(T_gt, T_pred, self.seq_lens)
+        # t_err, r_err = computeKittiMetrics(T_gt, T_pred, self.seq_lens)
 
         self.writer.add_scalar('val/loss', valid_loss, self.counter)
         for loss_name in aux_losses:
@@ -115,13 +115,13 @@ class SVDMonitor(MonitorBase):
         self.writer.add_scalar('val/t_err_std', results[1], self.counter)
         self.writer.add_scalar('val/R_err_med', results[2], self.counter)
         self.writer.add_scalar('val/R_err_std', results[3], self.counter)
-        self.writer.add_scalar('val/KITTI/t_err', t_err, self.counter)
-        self.writer.add_scalar('val/KITTI/r_err', r_err, self.counter)
+        # self.writer.add_scalar('val/KITTI/t_err', t_err, self.counter)
+        # self.writer.add_scalar('val/KITTI/r_err', r_err, self.counter)
 
         imgs = plot_sequences(T_gt, T_pred, self.seq_lens)
         for i, img in enumerate(imgs):
             self.writer.add_image('val/' + self.sequences[i], img, self.counter)
-        return t_err
+        return 0 # t_err
 
 class SteamMonitor(MonitorBase):
 
