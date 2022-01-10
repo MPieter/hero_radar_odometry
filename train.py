@@ -7,6 +7,7 @@ import numpy as np
 from datasets.oxford import get_dataloaders
 from datasets.boreas import get_dataloaders_boreas
 from datasets.neurodrone import get_dataloaders_neurodrone
+import  datasets.neurodrone_polar
 from networks.under_the_radar import UnderTheRadar
 # from networks.hero import HERO
 from utils.utils import get_lr
@@ -38,6 +39,8 @@ if __name__ == '__main__':
         train_loader, valid_loader, _ = get_dataloaders_boreas(config)
     elif config['dataset'] == 'neurodrone':
         train_loader, valid_loader, _ = get_dataloaders_neurodrone(config)
+    elif config['dataset'] == 'neurodrone_polar':
+        train_loader, valid_loader, _ = datasets.neurodrone_polar.get_dataloaders_neurodrone(config)
 
     if config['model'] == 'UnderTheRadar':
         model = UnderTheRadar(config).to(config['gpuid'])

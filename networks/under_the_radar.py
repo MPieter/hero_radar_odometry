@@ -3,6 +3,7 @@ from networks.unet import UNet
 from networks.keypoint import Keypoint
 from networks.softmax_matcher import SoftmaxMatcher
 from networks.svd import SVD
+from networks.svd_polar import SVDPolar
 
 class UnderTheRadar(torch.nn.Module):
     """
@@ -17,7 +18,10 @@ class UnderTheRadar(torch.nn.Module):
         self.unet = UNet(config)
         self.keypoint = Keypoint(config)
         self.softmax_matcher = SoftmaxMatcher(config)
-        self.svd = SVD(config)
+        if config['dataset'] == "neurodrone_polar":
+            self.svd = SVDPolar(config)
+        else:
+            self.svd = SVD(config)
 
     def forward(self, batch):
         data = batch['data'].to(self.gpuid)

@@ -418,6 +418,45 @@ def convert_to_radar_frame(pixel_coords, config):
     t = torch.tensor([[cart_min_range], [-cart_min_range]]).expand(B, 2, N).to(gpuid)
     return (torch.bmm(R, pixel_coords.transpose(2, 1)) + t).transpose(2, 1)
 
+rangeBins = np.loadtxt('../rangeBins.txt')
+azimuthBins = np.loadtxt('../azimuthBins.txt')
+
+
+def convert_pixel_polar_coords_to_radar_frame(polar_coords, config):
+    """Converts polar_coords (B x N x 2) from pixel polar coordinates to metric coordinates in the radar frame.
+    Args:
+        polar_coords (torch.tensor): (B,N,2) pixel polar coordinates
+        config (json): parse configuration file
+    Returns:
+        torch.tensor: (B,N,2) metric coordinates
+    """
+    cart_pixel_width = config['cart_pixel_width']
+    cart_resolution = config['cart_resolution']
+    gpuid = config['gpuid']
+    if (cart_pixel_width % 2) == 0:
+        cart_min_range = (cart_pixel_width / 2 - 0.5) * cart_resolution
+    else:
+        cart_min_range = cart_pixel_width // 2 * cart_resolution
+    B, N, _ = polar_coords.size()
+
+    rangeBinsTensor = torch.from_numpy(rangeBins).to(gpuid)
+    azimuthBinsTensor = torch.from_numpy(azimuthBins).to(gpuid)
+    _azimuthBinsTensor = torch.reshape(azimuthBinsTensor, (1, 1, azimuthBinsTensor.shape[0]))
+    _rangeBinsTensor = torch.reshape(rangeBinsTensor, (1, 1, rangeBinsTensor.shape[0]))
+    _azimuthBinsTensor = _azimuthBinsTensor.expand(B, N, -1).to(gpuid)
+    _rangeBinsTensor = _rangeBinsTensor.expand(B, N, -1).to(gpuid)
+
+    azimuth_idxs = torch.index_select(polar_coords, 2, torch.tensor([0]))  # B x N x 1
+    range_idxs = torch.index_select(polar_coords, 2, torch.tensor([1]))  # B x N x 1
+
+    azimuths = torch.gather(_azimuthBinsTensor, 2, azimuth_idxs)  # B x N x 1
+    ranges = torch.gather(_rangeBinsTensor, 2, range_idxs)  # B x N x 1
+
+    x = torch.mul(ranges, torch.sin(azimuths))
+    y = torch.mul(ranges, torch.cos(azimuths))
+
+    return torch.cat((x, y), 2)
+
 def get_indices(batch_size, window_size):
     """Retrieves batch indices for for source and target frames.
        This is intended to be used with the UnderTheRadar model.
