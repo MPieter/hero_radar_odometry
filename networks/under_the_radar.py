@@ -4,7 +4,7 @@ from networks.keypoint import Keypoint
 from networks.softmax_matcher import SoftmaxMatcher
 from networks.svd import SVD
 from networks.svd_polar import SVDPolar
-
+from networks.keypoint_polar import KeypointPolar
 class UnderTheRadar(torch.nn.Module):
     """
         This model computes a 3x3 Rotation matrix and a 3x1 translation vector describing the transformation
@@ -16,11 +16,12 @@ class UnderTheRadar(torch.nn.Module):
         self.config = config
         self.gpuid = config['gpuid']
         self.unet = UNet(config)
-        self.keypoint = Keypoint(config)
         self.softmax_matcher = SoftmaxMatcher(config)
         if config['dataset'] == "neurodrone_polar":
+            self.keypoint = KeypointPolar(config)
             self.svd = SVDPolar(config)
         else:
+            self.keypoint = Keypoint(config)
             self.svd = SVD(config)
 
     def forward(self, batch):

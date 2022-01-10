@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 import torch
 import torch.nn.functional as F
+import os
 
 def get_inverse_tf(T):
     """Returns the inverse of a given 4x4 homogeneous transform.
@@ -418,8 +419,10 @@ def convert_to_radar_frame(pixel_coords, config):
     t = torch.tensor([[cart_min_range], [-cart_min_range]]).expand(B, 2, N).to(gpuid)
     return (torch.bmm(R, pixel_coords.transpose(2, 1)) + t).transpose(2, 1)
 
-rangeBins = np.loadtxt('../rangeBins.txt')
-azimuthBins = np.loadtxt('../azimuthBins.txt')
+rangeBinsPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'rangeBins.txt')
+rangeBins = np.loadtxt(rangeBinsPath)
+azimuthBinsPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'azimuthBins.txt')
+azimuthBins = np.loadtxt(azimuthBinsPath)
 
 
 def convert_pixel_polar_coords_to_radar_frame(polar_coords, config):
@@ -430,13 +433,7 @@ def convert_pixel_polar_coords_to_radar_frame(polar_coords, config):
     Returns:
         torch.tensor: (B,N,2) metric coordinates
     """
-    cart_pixel_width = config['cart_pixel_width']
-    cart_resolution = config['cart_resolution']
     gpuid = config['gpuid']
-    if (cart_pixel_width % 2) == 0:
-        cart_min_range = (cart_pixel_width / 2 - 0.5) * cart_resolution
-    else:
-        cart_min_range = cart_pixel_width // 2 * cart_resolution
     B, N, _ = polar_coords.size()
 
     rangeBinsTensor = torch.from_numpy(rangeBins).to(gpuid)
@@ -446,8 +443,19 @@ def convert_pixel_polar_coords_to_radar_frame(polar_coords, config):
     _azimuthBinsTensor = _azimuthBinsTensor.expand(B, N, -1).to(gpuid)
     _rangeBinsTensor = _rangeBinsTensor.expand(B, N, -1).to(gpuid)
 
-    azimuth_idxs = torch.index_select(polar_coords, 2, torch.tensor([0]))  # B x N x 1
-    range_idxs = torch.index_select(polar_coords, 2, torch.tensor([1]))  # B x N x 1
+    azimuth_idxs = torch.index_select(polar_coords, 2, torch.tensor([0]).to(gpuid))  # B x N x 1
+    range_idxs = torch.index_select(polar_coords, 2, torch.tensor([1]).to(gpuid))  # B x N x 1
+
+    # TODO we lose some accuracy here because you could interpolate the azimuth and range values
+    azimuth_idxs = azimuth_idxs.to(torch.long)
+    range_idxs = range_idxs.to(torch.long)
+
+    azimuth_idxs[azimuth_idxs < 0] = 0
+    range_idxs[range_idxs < 0] = 0
+
+    azimuth_idxs[azimuth_idxs > azimuth_idxs.shape[2]] = azimuth_idxs.shape[2]
+    range_idxs[range_idxs > range_idxs.shape[2]] = range_idxs.shape[2]
+
 
     azimuths = torch.gather(_azimuthBinsTensor, 2, azimuth_idxs)  # B x N x 1
     ranges = torch.gather(_rangeBinsTensor, 2, range_idxs)  # B x N x 1

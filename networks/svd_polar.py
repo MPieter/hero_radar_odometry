@@ -73,4 +73,4 @@ class SVDPolar(torch.nn.Module):
         t_tgt_src_insrc = src_centroid - torch.bmm(R_tgt_src.transpose(2, 1), tgt_centroid)  # B x 3 x 1
         t_src_tgt_intgt = -R_tgt_src.bmm(t_tgt_src_insrc)
 
-        return R_tgt_src, t_src_tgt_intgt
+        return R_tgt_src.to(torch.double), t_src_tgt_intgt

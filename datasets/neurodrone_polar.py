@@ -189,7 +189,8 @@ class NeurodroneDataset(Dataset):
         seq = self.get_seq_from_idx(idx)
         frame = self.data_dir + seq + '/radar/' + self.frames[idx]
         timestamps, azimuths, _, polar = load_neuordrone_radar(frame)
-        polar_mask = mean_intensity_mask(polar)
+        polar = polar.astype(np.float32)
+        polar_mask = mean_intensity_mask(polar).astype(np.float32)
         # Get ground truth transform between this frame and the next
         radar_time = int(self.frames[idx].split('.')[0])
 

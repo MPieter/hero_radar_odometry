@@ -94,6 +94,7 @@ if __name__ == '__main__':
                 elif config['dataset'] == 'neurodrone' and config['model'] == 'UnderTheRadar':
                     batch = augmentBatch(batch, config)
             optimizer.zero_grad()
+            torch.autograd.set_detect_anomaly(True)
             try:
                 out = model(batch)
             except RuntimeError as e:
